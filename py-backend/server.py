@@ -52,9 +52,11 @@ async def handleMachineEdit(websocket, data, id):
         editors[m_id] = set()
     editors[m_id].add(id)
     await websocket.send("already in editors" if m_id in removedFrom else "added you to editors")
+    # notify users that you started editing
     websockets.broadcast(socketsForMachine(m_id), editors_val(m_id))
     for m in removedFrom:
         if m != m_id:
+            # notify users that you left editing the machine
             websockets.broadcast(socketsForMachine(m), editors_val(m))
 
 
@@ -78,12 +80,13 @@ async def echo(websocket):
             if(data["event"] == "subscribe"):
                 await handleSubscribeEvent(websocket, data)
 
-    print("end serve")
+    # when connection closed remove from all lists and notify others
     all_connections.remove(websocket)
     del id_con_dict[id]
     removedFrom = removeFromEditors(id)
     for m in removedFrom:
         websockets.broadcast(socketsForMachine(m), editors_val(m))
+    print("end serve")
 
 
 async def main():
